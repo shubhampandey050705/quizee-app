@@ -1,0 +1,6 @@
+export const db="6828a7540011bbc5d56e"
+export const questionCollection="questions"
+export const answerCollection="answers"
+export const commentCollection="comments"
+export const voteCollection="votes"
+export const questionAttachmentBucket="question-attachments"
