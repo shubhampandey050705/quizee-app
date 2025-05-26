@@ -4,7 +4,7 @@ import RTE from "@/components/RTE";
 import Meteors from "@/components/magicui/meteors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuthStore } from "@/store/Auth";
+import { useAuthStore } from "@/zustandStore/Auth";
 import { cn } from "@/lib/utils";
 import slugify from "@/utils/slugify";
 import { IconX } from "@tabler/icons-react";

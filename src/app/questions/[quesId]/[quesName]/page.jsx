@@ -1,5 +1,5 @@
 import Answers from "@/components/Answers";
-import Comments from "@/components/Comments";
+import Comments from "@/components/comments";
 import { MarkdownPreview } from "@/components/RTE";
 import VoteButtons from "@/components/VoteButtons";
 import Particles from "@/components/magicui/particles";
@@ -21,7 +21,7 @@ import { IconEdit } from "@tabler/icons-react";
 import Link from "next/link";
 import { Query } from "node-appwrite";
 import React from "react";
-import DeleteQuestion from "./DeleteQuestion";
+import DeleteQuestion from "./Deletequestion";
 import EditQuestion from "./EditQuestion";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 

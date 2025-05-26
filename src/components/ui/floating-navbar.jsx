@@ -1,14 +1,15 @@
 "use client";
-import React, { useState } from "react";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import { useAuthStore } from "@/store/Auth";
 
+
+import React, { useState } from "react";
+import {motion, AnimatePresence, useScroll, useMotionValueEvent,} from "framer-motion";
+import { cn } from "@/lib/utils"; // Make sure this file exists
+import Link from "next/link";
+import { useAuthStore } from "@/zustandStore/Auth";
+ 
 export const FloatingNav = ({ navItems, className }) => {
   const { scrollYProgress, scrollY } = useScroll();
   const { session, logout } = useAuthStore();
-
   const [visible, setVisible] = useState(true);
 
   useMotionValueEvent(scrollYProgress, "change", (current) => {
@@ -16,8 +17,10 @@ export const FloatingNav = ({ navItems, className }) => {
       setVisible(true);
       return;
     }
+
     if (typeof current === "number") {
       const direction = current - scrollYProgress.getPrevious();
+
       if (scrollYProgress.get() < 0.05) {
         setVisible(false);
       } else {
@@ -34,7 +37,10 @@ export const FloatingNav = ({ navItems, className }) => {
     <AnimatePresence mode="wait">
       <motion.div
         initial={{ opacity: 1, y: -100 }}
-        animate={{ y: visible ? 0 : -100, opacity: visible ? 1 : 0 }}
+        animate={{
+          y: visible ? 0 : -100,
+          opacity: visible ? 1 : 0,
+        }}
         transition={{ duration: 0.2 }}
         className={cn(
           "fixed inset-x-0 top-10 z-50 mx-auto flex max-w-fit items-center justify-center space-x-4 rounded-full border border-transparent bg-white py-2 pl-8 pr-2 shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)] dark:border-white/[0.2] dark:bg-black",
@@ -43,7 +49,7 @@ export const FloatingNav = ({ navItems, className }) => {
       >
         {navItems.map((navItem, idx) => (
           <Link
-            key={`link=${idx}`}
+            key={`link-${idx}`}
             href={navItem.link}
             className={cn(
               "relative flex items-center space-x-1 text-neutral-600 hover:text-neutral-500 dark:text-neutral-50 dark:hover:text-neutral-300"

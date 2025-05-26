@@ -1,17 +1,25 @@
-import { env } from "@/app/env.js";
+// @/models/client/config.js
 import { Client, Account, Avatars, Databases, Storage } from "appwrite";
+import { env } from "@/app/env.js"; // ✅ Make sure `env` is accessible client-side
 
-if (!env.appwrite.endpoint || !env.appwrite.projectId) {
-  throw new Error("Appwrite endpoint or projectId is not defined in environment variables");
+// 🚨 Ensure this runs only in the browser
+if (typeof window !== "undefined") {
+  if (!env.appwrite.endpoint || !env.appwrite.projectId) {
+    throw new Error("Appwrite endpoint or projectId is not defined in environment variables");
+  }
 }
 
-const client = new Client()
-  .setEndpoint(env.appwrite.endpoint)
-  .setProject(env.appwrite.projectId);
+const client = new Client();
 
-const databases = new Databases(client);
+if (typeof window !== "undefined") {
+  client
+    .setEndpoint(env.appwrite.endpoint)
+    .setProject(env.appwrite.projectId);
+}
+
 const account = new Account(client);
+const databases = new Databases(client);
 const storage = new Storage(client);
 const avatars = new Avatars(client);
 
-export { client, databases, account, storage, avatars };
+export { client, account, databases, storage, avatars };

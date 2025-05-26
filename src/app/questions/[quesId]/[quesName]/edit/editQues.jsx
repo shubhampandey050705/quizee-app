@@ -1,6 +1,6 @@
 "use client";
 
-import QuestionForm from "@/components/QuestionForm";
+import QuestionForm from "@/app/questions/ask/page";
 import { useAuthStore } from "@/store/Auth";
 import slugify from "@/utils/slugify";
 import { useRouter } from "next/navigation";

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BorderBeam } from "./magicui/border-beam";
+import { BorderBeam } from "../../../components/magicui/border.beam";
 import Link from "next/link";
 import slugify from "@/utils/slugify";
 import { avatars } from "@/models/client/config";

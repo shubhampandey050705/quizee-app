@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Pagination from "@/components/Pagination";
+import Pagination from "../components/Pagination";
 import { MarkdownPreview } from "@/components/RTE";
 import { answerCollection, db, questionCollection } from "@/models/name";
 import { databases } from "@/models/server/config";
