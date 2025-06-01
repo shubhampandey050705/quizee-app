@@ -17,7 +17,7 @@ export default function Header() {
       {
         name: "Home",
         link: "/",
-        icon: <IconHome className="h-4 w-4 text-neutral-500 dark:text-white" />,
+        icon: <IconHome className="h-4 w-4 bg-black text-neutral-500 dark:text-white" />,
       },
       {
         name: "Questions",

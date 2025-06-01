@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { databases } from "@/models/client/config"; // Appwrite client-side database instance
 import { db, voteCollection } from "@/models/name"; // Database ID and collection constants
-import { useAuthStore } from "@/store/Auth"; // Custom hook to access user authentication state
+import { useAuthStore } from "@/zustandStore/Auth"; // Custom hook to access user authentication state
 import { cn } from "@/lib/utils"; // Utility for conditional classNames
 import { IconCaretUpFilled, IconCaretDownFilled } from "@tabler/icons-react"; // Icons for voting
 import { ID, Query } from "appwrite"; // Appwrite utilities

@@ -1,156 +1,223 @@
-"use client";
-
-import { ID } from "appwrite";
-import React from "react";
-import VoteButtons from "./VoteButtons";
-import { useAuthStore } from "@/store/Auth";
+import Answers from "@/components/Answer";
+import Comments from "@/components/comments";
+import { MarkdownPreview } from "@/components/RTE";
+import VoteButtons from "@/components/VoteButtons";
+import Particles from "@/components/magicui/particles";
+import ShimmerButton from "@/components/magicui/shimmer-button";
 import { avatars } from "@/models/client/config";
-import RTE, { MarkdownPreview } from "./RTE";
-import Comments from "./Comments";
+import {
+  answerCollection,
+  db,
+  voteCollection,
+  questionCollection,
+  commentCollection,
+  questionAttachmentBucket,
+} from "@/models/name";
+import DeleteQuestion from "@/app/questions/[quesId]/[quesName]/Deletequestion";
+import EditQuestion from "@/app/questions/[quesId]/[quesName]/EditQuestion";
+import { databases, users } from "@/models/server/config";
+import { storage } from "@/models/client/config";
+import convertDateToRelativeTime from "@/utils/relativeTime";
 import slugify from "@/utils/slugify";
 import Link from "next/link";
-import { IconTrash } from "@tabler/icons-react";
+import { Query } from "node-appwrite";
+import React from "react";
+import { TracingBeam } from "@/components/ui/tracing-beam";
 
-const Answers = ({ answers: _answers, questionId }) => {
-  const [answers, setAnswers] = React.useState(_answers); // State to manage all answers
-  const [newAnswer, setNewAnswer] = React.useState("");   // Controlled input for new answer
-  const { user } = useAuthStore();                        // Get current user from global store
+const Page = async ({ params }) => {
+  if (!params?.quesId) {
+    return <div>Question ID not provided.</div>;
+  }
 
-  // Handle submission of new answer
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!newAnswer || !user) return;
+  const { quesId } = params;
 
-    try {
-      const response = await fetch("/api/answer", {
-        method: "POST",
-        body: JSON.stringify({
-          questionId: questionId,
-          answer: newAnswer,
-          authorId: user.$id,
-        }),
-      });
+  const [question, answers, upvotes, downvotes, comments] = await Promise.all([
+    databases.getDocument(db, questionCollection, quesId),
+    databases.listDocuments(db, answerCollection, [
+      Query.orderDesc("$createdAt"),
+      Query.equal("questionId", quesId),
+    ]),
+    databases.listDocuments(db, voteCollection, [
+      Query.equal("typeId", quesId),
+      Query.equal("type", "question"),
+      Query.equal("voteStatus", "upvoted"),
+      Query.limit(1),
+    ]),
+    databases.listDocuments(db, voteCollection, [
+      Query.equal("typeId", quesId),
+      Query.equal("type", "question"),
+      Query.equal("voteStatus", "downvoted"),
+      Query.limit(1),
+    ]),
+    databases.listDocuments(db, commentCollection, [
+      Query.equal("type", "question"),
+      Query.equal("typeId", quesId),
+      Query.orderDesc("$createdAt"),
+    ]),
+  ]);
 
-      const data = await response.json();
+  const author = await users.get(question.authorId);
 
-      if (!response.ok) throw data;
-
-      setNewAnswer(""); // Clear input
-      // Add new answer to state
-      setAnswers(prev => ({
-        total: prev.total + 1,
-        documents: [
-          {
-            ...data,
-            author: user,
-            upvotesDocuments: { documents: [], total: 0 },
-            downvotesDocuments: { documents: [], total: 0 },
-            comments: { documents: [], total: 0 },
+  [comments.documents, answers.documents] = await Promise.all([
+    Promise.all(
+      comments.documents.map(async (comment) => {
+        const author = await users.get(comment.authorId);
+        return {
+          ...comment,
+          author: {
+            $id: author.$id,
+            name: author.name,
+            reputation: author.prefs.reputation,
           },
-          ...prev.documents,
-        ],
-      }));
-    } catch (error) {
-      window.alert(error?.message || "Error creating answer");
-    }
-  };
+        };
+      })
+    ),
+    Promise.all(
+      answers.documents.map(async (answer) => {
+        const [author, comments, upvotes, downvotes] = await Promise.all([
+          users.get(answer.authorId),
+          databases.listDocuments(db, commentCollection, [
+            Query.equal("typeId", answer.$id),
+            Query.equal("type", "answer"),
+            Query.orderDesc("$createdAt"),
+          ]),
+          databases.listDocuments(db, voteCollection, [
+            Query.equal("typeId", answer.$id),
+            Query.equal("type", "answer"),
+            Query.equal("voteStatus", "upvoted"),
+            Query.limit(1),
+          ]),
+          databases.listDocuments(db, voteCollection, [
+            Query.equal("typeId", answer.$id),
+            Query.equal("type", "answer"),
+            Query.equal("voteStatus", "downvoted"),
+            Query.limit(1),
+          ]),
+        ]);
 
-  // Handle deletion of an answer
-  const deleteAnswer = async (answerId) => {
-    try {
-      const response = await fetch("/api/answer", {
-        method: "DELETE",
-        body: JSON.stringify({ answerId }),
-      });
+        comments.documents = await Promise.all(
+          comments.documents.map(async (comment) => {
+            const author = await users.get(comment.authorId);
+            return {
+              ...comment,
+              author: {
+                $id: author.$id,
+                name: author.name,
+                reputation: author.prefs.reputation,
+              },
+            };
+          })
+        );
 
-      const data = await response.json();
-
-      if (!response.ok) throw data;
-
-      setAnswers(prev => ({
-        total: prev.total - 1,
-        documents: prev.documents.filter(answer => answer.$id !== answerId),
-      }));
-    } catch (error) {
-      window.alert(error?.message || "Error deleting answer");
-    }
-  };
+        return {
+          ...answer,
+          comments,
+          upvotesDocuments: upvotes,
+          downvotesDocuments: downvotes,
+          author: {
+            $id: author.$id,
+            name: author.name,
+            reputation: author.prefs.reputation,
+          },
+        };
+      })
+    ),
+  ]);
 
   return (
-    <>
-      <h2 className="mb-4 text-xl">{answers.total} Answers</h2>
-
-      {/* Render each answer */}
-      {answers.documents.map(answer => (
-        <div key={answer.$id} className="flex gap-4">
-          {/* Voting + delete button */}
+    <TracingBeam className="container pl-6">
+      <Particles
+        className="fixed inset-0 h-full w-full"
+        quantity={500}
+        ease={100}
+        color="#ffffff"
+        refresh
+      />
+      <div className="relative mx-auto px-4 pb-20 pt-36">
+        <div className="flex">
+          <div className="w-full">
+            <h1 className="mb-1 text-3xl font-bold">{question.title}</h1>
+            <div className="flex gap-4 text-sm">
+              <span>Asked {convertDateToRelativeTime(new Date(question.$createdAt))}</span>
+              <span>Answer {answers.total}</span>
+              <span>Votes {upvotes.total + downvotes.total}</span>
+            </div>
+          </div>
+          <Link href="/questions/ask" className="ml-auto inline-block shrink-0">
+            <ShimmerButton className="shadow-2xl">
+              <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white dark:from-white dark:to-slate-900/10 lg:text-lg">
+                Ask a question
+              </span>
+            </ShimmerButton>
+          </Link>
+        </div>
+        <hr className="my-4 border-white/40" />
+        <div className="flex gap-4">
           <div className="flex shrink-0 flex-col items-center gap-4">
             <VoteButtons
-              type="answer"
-              id={answer.$id}
-              upvotes={answer.upvotesDocuments}
-              downvotes={answer.downvotesDocuments}
+              type="question"
+              id={question.$id}
+              className="w-full"
+              upvotes={upvotes}
+              downvotes={downvotes}
             />
-            {user?.$id === answer.authorId && (
-              <button
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-red-500 p-1 text-red-500 duration-200 hover:bg-red-500/10"
-                onClick={() => deleteAnswer(answer.$id)}
-              >
-                <IconTrash className="h-4 w-4" />
-              </button>
-            )}
+            <EditQuestion
+              questionId={question.$id}
+              questionTitle={question.title}
+              authorId={question.authorId}
+            />
+            <DeleteQuestion questionId={question.$id} authorId={question.authorId} />
           </div>
-
-          {/* Answer content and metadata */}
           <div className="w-full overflow-auto">
-            <MarkdownPreview className="rounded-xl p-4" source={answer.content} />
-
-            {/* Author info */}
+            <MarkdownPreview className="rounded-xl p-4" source={question.content} />
+            {question.attachmentId && (
+              <picture>
+                <img
+                  src={storage.getFilePreview(questionAttachmentBucket, question.attachmentId).href}
+                  alt={question.title}
+                  className="mt-3 rounded-lg"
+                />
+              </picture>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+              {question.tags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`/questions?tag=${tag}`}
+                  className="inline-block rounded-lg bg-white/10 px-2 py-0.5 duration-200 hover:bg-white/20"
+                >
+                  #{tag}
+                </Link>
+              ))}
+            </div>
             <div className="mt-4 flex items-center justify-end gap-1">
               <picture>
                 <img
-                  src={avatars.getInitials(answer.author.name, 36, 36).href}
-                  alt={answer.author.name}
+                  src={avatars.getInitials(author.name, 36, 36).href}
+                  alt={author.name}
                   className="rounded-lg"
                 />
               </picture>
               <div className="block leading-tight">
                 <Link
-                  href={`/users/${answer.author.$id}/${slugify(answer.author.name)}`}
+                  href={`/users/${author.$id}/${slugify(author.name)}`}
                   className="text-orange-500 hover:text-orange-600"
                 >
-                  {answer.author.name}
+                  {author.name}
                 </Link>
                 <p>
-                  <strong>{answer.author.reputation}</strong>
+                  <strong>{author.prefs.reputation}</strong>
                 </p>
               </div>
             </div>
-
-            {/* Comments for this answer */}
-            <Comments
-              comments={answer.comments}
-              className="mt-4"
-              type="answer"
-              typeId={answer.$id}
-            />
-
+            <Comments comments={comments} className="mt-4" type="question" typeId={question.$id} />
             <hr className="my-4 border-white/40" />
           </div>
         </div>
-      ))}
-
-      {/* Form to post a new answer */}
-      <hr className="my-4 border-white/40" />
-      <form onSubmit={handleSubmit} className="space-y-2">
-        <h2 className="mb-4 text-xl">Your Answer</h2>
-        <RTE value={newAnswer} onChange={value => setNewAnswer(value || "")} />
-        <button className="shrink-0 rounded bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-600">
-          Post Your Answer
-        </button>
-      </form>
-    </>
+        <Answers answers={answers} questionId={question.$id} />
+      </div>
+    </TracingBeam>
   );
 };
 
-export default Answers;
+export default Page;

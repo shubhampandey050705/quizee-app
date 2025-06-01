@@ -10,34 +10,34 @@ import React from "react";
 import Link from "next/link";
 import ShimmerButton from "@/components/magicui/shimmer-button";
 import QuestionCard from "@/app/questions/ask/QuestionCard";
-import Pagination  from "@/components/pagination";
+import Pagination from "@/components/pagination";
 import Search from "./Search";
 
-const Page = async ({ searchParams }) => {
-  searchParams = searchParams || {};
-  searchParams.page = searchParams.page || "1";
+const Page = async ({ searchParams = {} }) => {
+  const page = parseInt(searchParams.page) || 1;
+  const tag = searchParams.tag || null;
+  const search = searchParams.search || null;
 
   const queries = [
     Query.orderDesc("$createdAt"),
-    Query.offset((+searchParams.page - 1) * 25),
+    Query.offset((page - 1) * 25),
     Query.limit(25),
   ];
 
-  if (searchParams.tag) {
-    queries.push(Query.equal("tags", searchParams.tag));
+  if (tag) {
+    queries.push(Query.equal("tags", tag));
   }
 
-  if (searchParams.search) {
+  if (search) {
     queries.push(
       Query.or([
-        Query.search("title", searchParams.search),
-        Query.search("content", searchParams.search),
+        Query.search("title", search),
+        Query.search("content", search),
       ])
     );
   }
 
   const questions = await databases.listDocuments(db, questionCollection, queries);
-  console.log("Questions", questions);
 
   questions.documents = await Promise.all(
     questions.documents.map(async (ques) => {

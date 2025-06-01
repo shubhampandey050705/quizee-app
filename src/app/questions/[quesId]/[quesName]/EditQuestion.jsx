@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthStore } from "@/store/Auth";
+import { useAuthStore } from "@/zustandStore/Auth";
 import slugify from "@/utils/slugify";
 import { IconEdit } from "@tabler/icons-react";
 import Link from "next/link";

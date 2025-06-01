@@ -1,4 +1,4 @@
-import Answers from "@/components/Answers";
+import Answer from "@/components/Answer";
 import Comments from "@/components/comments";
 import { MarkdownPreview } from "@/components/RTE";
 import VoteButtons from "@/components/VoteButtons";
@@ -21,8 +21,9 @@ import { IconEdit } from "@tabler/icons-react";
 import Link from "next/link";
 import { Query } from "node-appwrite";
 import React from "react";
-import DeleteQuestion from "./Deletequestion";
-import EditQuestion from "./EditQuestion";
+ import DeleteQuestion from "./Deletequestion.jsx";  // relative import if in same folder
+import EditQuestion from "./EditQuestion.jsx";
+
 import { TracingBeam } from "@/components/ui/tracing-beam";
 
 const Page = async ({ params }) => {
@@ -36,13 +37,13 @@ const Page = async ({ params }) => {
       Query.equal("typeId", params.quesId),
       Query.equal("type", "question"),
       Query.equal("voteStatus", "upvoted"),
-      Query.limit(1), // optimization
+      Query.limit(1),
     ]),
     databases.listDocuments(db, voteCollection, [
       Query.equal("typeId", params.quesId),
       Query.equal("type", "question"),
       Query.equal("voteStatus", "downvoted"),
-      Query.limit(1), // optimization
+      Query.limit(1),
     ]),
     databases.listDocuments(db, commentCollection, [
       Query.equal("type", "question"),
@@ -165,13 +166,18 @@ const Page = async ({ params }) => {
           </div>
           <div className="w-full overflow-auto">
             <MarkdownPreview className="rounded-xl p-4" source={question.content} />
-            <picture>
-              <img
-                src={storage.getFilePreview(questionAttachmentBucket, question.attachmentId).href}
-                alt={question.title}
-                className="mt-3 rounded-lg"
-              />
-            </picture>
+            
+            {/* ✅ Safe image rendering */}
+            {question.attachmentId && (
+              <picture>
+                <img
+                  src={storage.getFilePreview(questionAttachmentBucket, question.attachmentId).href}
+                  alt={question.title}
+                  className="mt-3 rounded-lg"
+                />
+              </picture>
+            )}
+
             <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
               {question.tags.map((tag) => (
                 <Link
@@ -207,7 +213,7 @@ const Page = async ({ params }) => {
             <hr className="my-4 border-white/40" />
           </div>
         </div>
-        <Answers answers={answers} questionId={question.$id} />
+        <Answer answers={answers} questionId={question.$id} />
       </div>
     </TracingBeam>
   );

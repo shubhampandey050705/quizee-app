@@ -2,7 +2,7 @@
 
 import { databases } from "@/models/client/config";
 import { commentCollection, db } from "@/models/name";
-import { useAuthStore } from "@/store/Auth";
+import { useAuthStore } from "@/zustandStore/Auth";
 import { cn } from "@/lib/utils";
 import convertDateToRelativeTime from "@/utils/relativeTime";
 import slugify from "@/utils/slugify";

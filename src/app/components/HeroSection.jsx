@@ -16,11 +16,15 @@ export default async function HeroSection() {
   return (
     <HeroParallax
       header={<HeroSectionHeader />}
-      products={questions.documents.map((q) => ({
-        title: q.title,
-        link: `/questions/${q.$id}/${slugify(q.title)}`,
-        thumbnail: storage.getFilePreview(questionAttachmentBucket, q.attachmentId).href,
-      }))}
+      products={questions.documents
+        .filter((q) => q.attachmentId) // only include questions with an attachmentId
+        .map((q) => ({
+          title: q.title,
+          link: `/questions/${q.$id}/${slugify(q.title)}`,
+          thumbnail: q.attachmentId
+            ? storage.getFilePreview(questionAttachmentBucket, q.attachmentId).href
+            : null, // fallback to null if no attachmentId
+        }))}
     />
   );
 }
